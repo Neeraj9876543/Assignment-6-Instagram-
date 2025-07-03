@@ -1,0 +1,21 @@
+/* frontend/src/components/Stories.css */
+.stories-container {
+  display: flex;
+  overflow-x: auto;
+  gap: 15px;
+  padding: 10px 0;
+  border-bottom: 1px solid #ccc;
+  scrollbar-width: none;
+}
+
+.stories-container::-webkit-scrollbar {
+  display: none;
+}
+
+.story img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid orange;
+  object-fit: cover;
+}
