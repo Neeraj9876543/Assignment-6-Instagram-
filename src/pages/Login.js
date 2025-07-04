@@ -1,27 +1,42 @@
-// frontend/src/pages/Login.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { showSuccess, showError } from '../components/SweetComponent';
+import API from '../api/axiosInstance';
 
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  // 🔁 Load token from localStorage on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      API.defaults.headers.common['Authorization'] = `Token ${token}`;
+    }
+  }, []);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
+    try {
+      // 🔐 Authenticate user
+      const res = await API.post('/auth/token/', { username, password });
 
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const matchedUser = users.find(
-      (user) => user.username === username && user.password === password
-    );
+      // 💾 Save token in localStorage and set axios default
+      const token = res.data.auth_token;
+      localStorage.setItem('token', token);
+      API.defaults.headers.common['Authorization'] = `Token ${token}`;
 
-    if (matchedUser) {
-      localStorage.setItem('authUser', JSON.stringify(matchedUser));
+      // 👤 Get user details
+      const user = await API.get('/auth/users/me/');
+      localStorage.setItem('authUser', JSON.stringify(user.data));
+
       showSuccess('Login successful!');
-      setTimeout(() => navigate('/'), 1000); // 👈 Navigate to home
-    } else {
-      showError('Login failed', 'Invalid username or password');
+      setTimeout(() => navigate('/home'), 1000);
+    } catch (err) {
+      console.error('Login error:', err);
+      const msg = err?.response?.data?.non_field_errors?.[0] || 'Login failed';
+      showError('Login failed', msg);
     }
   };
 
@@ -31,7 +46,6 @@ function Login() {
         <div className="text-center mb-4">
           <h3>Instagram</h3>
         </div>
-
         <form onSubmit={handleLogin}>
           <div className="mb-3">
             <input
@@ -43,7 +57,6 @@ function Login() {
               required
             />
           </div>
-
           <div className="mb-3">
             <input
               type="password"
@@ -54,14 +67,14 @@ function Login() {
               required
             />
           </div>
-
           <button type="submit" className="btn btn-primary w-100">Log In</button>
         </form>
-
         <div className="text-center mt-3">
           <small>
             Don’t have an account?{' '}
-            <a href="/signup" className="text-decoration-none text-primary fw-bold">Sign up</a>
+            <a href="/signup" className="text-decoration-none text-primary fw-bold">
+              Sign up
+            </a>
           </small>
         </div>
       </div>

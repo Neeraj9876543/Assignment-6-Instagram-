@@ -1,29 +1,48 @@
+// frontend/src/pages/Create.js
 import React, { useState } from 'react';
+import API from '../api/axiosInstance';
+import { showSuccess, showError } from '../components/SweetComponent';
 
 function Create() {
   const [activeTab, setActiveTab] = useState('post');
   const [caption, setCaption] = useState('');
   const [mediaURL, setMediaURL] = useState('');
 
-  const handleCreate = () => {
-    const newItem = {
-      id: Date.now(),
-      type: activeTab,
-      caption,
-      mediaURL,
-      createdAt: new Date().toISOString(),
-      user: JSON.parse(localStorage.getItem('authUser'))?.username || 'Guest'
-    };
+  const handleCreate = async () => {
+    const token = localStorage.getItem('token');
 
-    const storageKey = activeTab === 'post' ? 'posts' : 'reels';
-    const existing = JSON.parse(localStorage.getItem(storageKey)) || [];
-    existing.unshift(newItem); // newest first
-    localStorage.setItem(storageKey, JSON.stringify(existing));
+    if (!token) {
+      showError('Not Logged In', 'Please login to create a post or reel.');
+      return;
+    }
 
-    // Reset fields
-    setCaption('');
-    setMediaURL('');
-    alert(`${activeTab === 'post' ? 'Post' : 'Reel'} created successfully!`);
+    if (!caption.trim() || !mediaURL.trim()) {
+      showError('Missing Fields', 'Both caption and media URL are required.');
+      return;
+    }
+
+    try {
+      const endpoint = activeTab === 'post' ? '/posts/' : '/reels/';
+      const payload = {
+        caption,
+        media_url: mediaURL,
+      };
+
+      await API.post(endpoint, payload); // token is already applied globally in axiosInstance
+      showSuccess(`${activeTab === 'post' ? 'Post' : 'Reel'} created successfully!`);
+
+      // Clear fields
+      setCaption('');
+      setMediaURL('');
+    } catch (err) {
+      console.error('Creation Error:', err?.response?.data || err.message);
+      const msg =
+        err?.response?.data?.media_url?.[0] ||
+        err?.response?.data?.caption?.[0] ||
+        err?.response?.data?.detail ||
+        'Failed to create item. Make sure you are logged in and all fields are valid.';
+      showError('Error', msg);
+    }
   };
 
   return (
@@ -52,16 +71,22 @@ function Create() {
           className="form-control"
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
+          placeholder="Enter caption"
+          required
         />
       </div>
 
       <div className="mb-3">
-        <label className="form-label">{activeTab === 'post' ? 'Image/Media URL' : 'Reel Video URL'}</label>
+        <label className="form-label">
+          {activeTab === 'post' ? 'Image URL' : 'Reel Video URL'}
+        </label>
         <input
           type="text"
           className="form-control"
           value={mediaURL}
           onChange={(e) => setMediaURL(e.target.value)}
+          placeholder="https://..."
+          required
         />
       </div>
 

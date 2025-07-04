@@ -1,13 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import Stories from '../components/Stories';
 import Suggest from '../components/Suggest';
+import API from '../api/axiosInstance';
+import { showError } from '../components/SweetComponent';
 
 function Home() {
   const [posts, setPosts] = useState([]);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('posts')) || [];
-    setPosts(stored);
+    const fetchPosts = async () => {
+      try {
+        const response = await API.get('/posts/');
+        setPosts(response.data);
+      } catch (error) {
+        console.error(error);
+        showError('Failed to load posts', 'Make sure you are logged in.');
+      }
+    };
+
+    fetchPosts();
   }, []);
 
   return (
@@ -22,14 +33,14 @@ function Home() {
 
           {posts.map((post) => (
             <div key={post.id} className="card mb-3">
-              {post.mediaURL && (
-                <img src={post.mediaURL} className="card-img-top" alt="post" />
+              {post.media_url && (
+                <img src={post.media_url} className="card-img-top" alt="post" />
               )}
               <div className="card-body">
-                <h5 className="card-title">@{post.user}</h5>
+                <h5 className="card-title">@{post.user?.username || post.user}</h5>
                 <p className="card-text">{post.caption}</p>
                 <small className="text-muted">
-                  {new Date(post.createdAt).toLocaleString()}
+                  {new Date(post.created_at).toLocaleString()}
                 </small>
               </div>
             </div>
