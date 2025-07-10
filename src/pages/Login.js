@@ -20,22 +20,27 @@ function Login() {
     e.preventDefault();
     try {
       // 🔐 Authenticate user
-      const res = await API.post('/auth/token/', { username, password });
+      const res = await API.post('auth/token/login/', {
+        username,
+        password,
+      });
 
-      // 💾 Save token in localStorage and set axios default
       const token = res.data.auth_token;
       localStorage.setItem('token', token);
       API.defaults.headers.common['Authorization'] = `Token ${token}`;
 
       // 👤 Get user details
-      const user = await API.get('/auth/users/me/');
+      const user = await API.get('auth/users/me/');
       localStorage.setItem('authUser', JSON.stringify(user.data));
 
       showSuccess('Login successful!');
       setTimeout(() => navigate('/home'), 1000);
     } catch (err) {
       console.error('Login error:', err);
-      const msg = err?.response?.data?.non_field_errors?.[0] || 'Login failed';
+      const msg =
+        err?.response?.data?.non_field_errors?.[0] ||
+        err?.response?.data?.detail ||
+        'Login failed';
       showError('Login failed', msg);
     }
   };
@@ -67,7 +72,9 @@ function Login() {
               required
             />
           </div>
-          <button type="submit" className="btn btn-primary w-100">Log In</button>
+          <button type="submit" className="btn btn-primary w-100">
+            Log In
+          </button>
         </form>
         <div className="text-center mt-3">
           <small>
